@@ -34,30 +34,32 @@ def main():
         sleep(.300)
         newclipboard = droid.getClipboard().result
         if newclipboard and clipboard == newclipboard: continue
-        if validators.url(newclipboard):
-            logger.debug(f"Handling url {newclipboard}")
-            try:
-                r = requests.get(newclipboard)
-                r.raise_for_status()
-                for h in handlers.get('url', []):
-                    if h(r, newclipboard):
+        try:
+            if validators.url(newclipboard):
+                logger.debug(f"Handling url {newclipboard}")
+                try:
+                    r = requests.get(newclipboard)
+                    r.raise_for_status()
+                    for h in handlers.get('url', []):
+                        if h(r, newclipboard):
+                            logger.debug("OK")
+                            break
+                except:
+                    logger.exception('Unhandled exception')
+                    continue
+            else:       
+                handled = False
+                logger.debug(f"Handling default {newclipboard}")
+                
+                for h in handlers.get('default', []):
+                    if h(newclipboard):
+                        handled = True
                         logger.debug("OK")
                         break
-            except:
-                logger.exception('Unhandled exception')
-                continue
-        else:       
-            handled = False
-            logger.debug(f"Handling default {newclipboard}")
-            
-            for h in handlers.get('default', []):
-                if h(newclipboard):
-                    handled = True
-                    logger.debug("OK")
-                    break
-            if not handled:
-                logger.info(f"Unknow clipboard contents {newclipboard}")
-            
+                if not handled:
+                    logger.info(f"Unknow clipboard contents {newclipboard}")
+        except:
+            logger.exception(f"Error: cannot handle {type(newclipboard)}")
 
         clipboard = newclipboard
             
